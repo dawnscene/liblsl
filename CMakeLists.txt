@@ -51,6 +51,8 @@ add_library(lslobj OBJECT
 	src/cancellable_streambuf.h
 	src/cancellation.h
 	src/cancellation.cpp
+	src/command_sender.h
+	src/command_sender.cpp
 	src/common.cpp
 	src/common.h
 	src/consumer_queue.cpp

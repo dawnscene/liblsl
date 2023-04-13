@@ -929,6 +929,30 @@ public:
 		return stream_info(res);
 	}
 
+	/**
+ 	 * Send an XML-based command to mainipulate the remote streaminfo contents
+	 * Can be invoked at any time of the stream's lifetime.
+	 * @param commands The XML commands to send
+	 * @param timeout Timeout of the operation. Use LSL_FOREVER to effectively disable it.
+	 * @throws timeout_error (if the timeout expires), or lost_error (if the stream source has been
+	 * lost).
+	 * @note USE WITH EXTREMLY CAUTION as it might mess up the streaminfo contents if inappropriate query is provided
+	 * @example
+   	 *	"<command op='set_text' query='/info/name' param='MyName'></command>"
+	 *	"<command op='set_text' query='//type' param='MyType'></command>"
+	 *	"<command op='append_child' query='/info/desc' param='mychild'></command>"
+	 *	"<command op='append_attribute' query='//mychild' param='child_attribute'></command>"
+	 *	"<command op='set_value' query='//@child_attribute' param='attribute_value'></command>"
+	 *	"<command op='append_child' query='/' param='config'></command>"
+	 *	"<command op='remove_attribute' query='//mychild' param='child_attribute'></command>" 
+	 */
+	stream_info send_commands(const char *commands, double timeout = FOREVER) {
+		int32_t ec = 0;
+		lsl_streaminfo res = lsl_send_commands(obj.get(), commands, timeout, &ec);
+		check_error(ec);
+		return stream_info(res);
+	}
+
 	/** Subscribe to the data stream.
 	 * All samples pushed in at the other end from this moment onwards will be queued and
 	 * eventually be delivered in response to pull_sample() or pull_chunk() calls.

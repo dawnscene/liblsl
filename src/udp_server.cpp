@@ -92,8 +92,6 @@ udp_server::udp_server(stream_info_impl_p info, asio::io_context &io, ip::addres
 // === externally issued asynchronous commands ===
 
 void udp_server::begin_serving() {
-	// pre-calculate the shortinfo message (now that everyone should have initialized their part).
-	shortinfo_msg_ = info_->to_shortinfo_message();
 	// start asking for a packet
 	request_next_packet();
 }
@@ -137,7 +135,7 @@ void udp_server::process_shortinfo_request(std::istream& request_stream)
 		// query matches: send back reply
 		udp::endpoint return_endpoint(remote_endpoint_.address(), return_port);
 		string_p replymsg(
-			std::make_shared<std::string>((query_id += "\r\n") += shortinfo_msg_));
+			std::make_shared<std::string>((query_id += "\r\n") += info_->to_shortinfo_message()));
 		socket_->async_send_to(asio::buffer(*replymsg), return_endpoint,
 			[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
 				if (err_ != asio::error::operation_aborted && err_ != asio::error::shut_down)

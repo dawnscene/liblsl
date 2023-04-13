@@ -82,8 +82,6 @@ private:
 	bool time_services_enabled_;
 	/// the endpoint that we're currently talking to)
 	udp::endpoint remote_endpoint_;
-	/// pre-computed server response
-	std::string shortinfo_msg_;
 };
 } // namespace lsl
 

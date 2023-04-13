@@ -2,6 +2,7 @@
 #define STREAM_INLET_IMPL_H
 
 #include "common.h"
+#include "command_sender.h"
 #include "data_receiver.h"
 #include "info_receiver.h"
 #include "inlet_connection.h"
@@ -40,7 +41,7 @@ public:
 	stream_inlet_impl(const stream_info_impl &info, int32_t max_buflen = 360,
 		int32_t max_chunklen = 0, bool recover = true)
 		: conn_(info, recover), info_receiver_(conn_), time_receiver_(conn_),
-		  data_receiver_(conn_, max_buflen, max_chunklen),
+		  data_receiver_(conn_, max_buflen, max_chunklen), command_sender_(conn_), 
 		  postprocessor_([this]() { return time_receiver_.time_correction(5); },
 			  [this]() { return conn_.current_srate(); },
 			  [this]() { return time_receiver_.was_reset(); }) {
@@ -243,6 +244,8 @@ public:
 	 */
 	const stream_info_impl &info(double timeout = FOREVER) { return info_receiver_.info(timeout); }
 
+	const stream_info_impl &send_commands (std::string commands, double timeout = FOREVER) { return command_sender_.send_commands(commands, timeout); }
+
 	/**
 	 * Retrieve an estimated time correction offset for the given stream.
 	 *
@@ -335,6 +338,7 @@ private:
 	info_receiver info_receiver_;
 	time_receiver time_receiver_;
 	data_receiver data_receiver_;
+	command_sender command_sender_;
 
 	/// class for post-processing time stamps
 	time_postprocessor postprocessor_;

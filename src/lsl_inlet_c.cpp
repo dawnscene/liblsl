@@ -43,6 +43,14 @@ LIBLSL_C_API lsl_streaminfo lsl_get_fullinfo(lsl_inlet in, double timeout, int32
 	return nullptr;
 }
 
+LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *commands, double timeout, int32_t *ec) {
+	try {
+		return new stream_info_impl(in->send_commands(commands, timeout));
+	}
+	LSL_STORE_EXCEPTION_IN(ec)
+	return nullptr;
+}
+
 LIBLSL_C_API void lsl_open_stream(lsl_inlet in, double timeout, int32_t *ec) {
 	if (ec) *ec = lsl_no_error;
 	try {

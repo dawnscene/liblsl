@@ -98,10 +98,6 @@ private:
 	// registry of in-flight asessions (for cancellation)
 	std::map<void *, std::weak_ptr<client_session>> inflight_;
 	std::recursive_mutex inflight_mut_; // mutex protecting the registry from concurrent access
-
-	// some cached data
-	std::string shortinfo_msg_; // pre-computed short-info server response
-	std::string fullinfo_msg_;	// pre-computed full-info server response
 };
 } // namespace lsl
 

@@ -84,6 +84,8 @@ private:
 	/// Handler that gets called after finishing reading of the query line.
 	void handle_read_query_outcome(err_t err);
 
+	void handle_send_command_outcome(err_t err);
+
 	/// Helper function to send a status message to the connected party.
 	void send_status_message(const std::string &msg);
 
@@ -182,9 +184,6 @@ tcp_server::tcp_server(stream_info_impl_p info, io_context_p io, send_buffer_p s
 // === externally issued asynchronous commands ===
 
 void tcp_server::begin_serving() {
-	// pre-generate the info's messages
-	shortinfo_msg_ = info_->to_shortinfo_message();
-	fullinfo_msg_ = info_->to_fullinfo_message();
 	// start accepting connections
 	if (acceptor_v4_) accept_next_connection(acceptor_v4_);
 	if (acceptor_v6_) accept_next_connection(acceptor_v6_);
@@ -315,9 +314,15 @@ void client_session::handle_read_command_outcome(err_t read_err) {
 			// fullinfo request: reply right away
 			auto serv = serv_.lock();
 			if (serv)
-				async_write(sock_, asio::buffer(serv->fullinfo_msg_),
+				async_write(sock_, asio::buffer(serv->info_->to_fullinfo_message()),
 					[shared_this = shared_from_this(), serv](
 						err_t /*unused*/, std::size_t /*unused*/) {});
+		} else if (method == "LSL:command") {
+			// command request: read the command
+			async_read_until(sock_, requestbuf_, "\r\n",
+				[shared_this = shared_from_this()](err_t err, std::size_t /*unused*/) {
+					shared_this->handle_send_command_outcome(err);
+				});
 		} else if (method == "LSL:streamfeed")
 			// streamfeed request (1.00): read feed parameters
 			async_read_until(sock_, requestbuf_, "\r\n",
@@ -351,7 +356,7 @@ void client_session::handle_read_query_outcome(err_t err) {
 		if (!serv) return;
 		if (serv->info_->matches_query(query)) {
 			// matches: reply (otherwise just close the stream)
-			async_write(sock_, asio::buffer(serv->shortinfo_msg_),
+			async_write(sock_, asio::buffer(serv->info_->to_shortinfo_message()),
 				[serv](err_t /*unused*/, std::size_t /*unused*/) {
 					/* keep the tcp_server alive until the shortinfo is sent completely*/
 				});
@@ -360,6 +365,23 @@ void client_session::handle_read_query_outcome(err_t err) {
 		}
 	} catch (std::exception &e) {
 		LOG_F(WARNING, "Unexpected error while parsing a client request: %s", e.what());
+	}
+}
+
+void client_session::handle_send_command_outcome(err_t err) {
+	try {
+		if (err) return;
+		std::string commands;
+		getline(requeststream_, commands);
+
+		auto serv = serv_.lock();
+		if (serv)
+			serv->info_->process_commands(commands);
+			async_write(sock_, asio::buffer(serv->info_->to_fullinfo_message()),
+				[shared_this = shared_from_this(), serv](
+					err_t /*unused*/, std::size_t /*unused*/) {});
+	} catch (std::exception &e) {
+		LOG_F(WARNING, "Unexpected error while parsing a fullinfo request: %s", e.what());
 	}
 }
 
@@ -492,7 +514,7 @@ void client_session::handle_read_feedparams(
 			// create a portable output archive to write to
 			outarch_ = std::make_unique<eos::portable_oarchive>(feedbuf_);
 			// serialize the shortinfo message into an archive
-			*outarch_ << serv->shortinfo_msg_;
+			*outarch_ << serv->info_->to_shortinfo_message();
 		} else {
 			// allocate scratchpad memory for endian conversion, etc.
 			scratch_ = new char[format_sizes[info->channel_format()] * info->channel_count()];

@@ -65,6 +65,28 @@ extern LIBLSL_C_API void lsl_destroy_inlet(lsl_inlet in);
 extern LIBLSL_C_API lsl_streaminfo lsl_get_fullinfo(lsl_inlet in, double timeout, int32_t *ec);
 
 /**
+ * Send an XML-based command to mainipulate the remote streaminfo contents
+ * Can be invoked at any time of the stream's lifetime.
+ * @param in The lsl_inlet object to act on.
+ * @param commands The XML commands to send
+ * @param timeout Timeout of the operation. Use LSL_FOREVER to effectively disable it.
+ * @param[out] ec Error code: if nonzero, can be either lsl_timeout_error (if the timeout has
+ * expired) or #lsl_lost_error (if the stream source has been lost).
+ * @return A copy of the full streaminfo of the inlet or NULL in the event that an error happened.
+ * @note It is the user's responsibility to destroy it when it is no longer needed.
+ * @note USE WITH EXTREMLY CAUTION as it might mess up the streaminfo contents if inappropriate query is provided
+ * @example
+ *	"<command op='set_text' query='/info/name' param='MyName'></command>"
+ *	"<command op='set_text' query='//type' param='MyType'></command>"
+ *	"<command op='append_child' query='/info/desc' param='mychild'></command>"
+ *	"<command op='append_attribute' query='//mychild' param='child_attribute'></command>"
+ *	"<command op='set_value' query='//@child_attribute' param='attribute_value'></command>"
+ *	"<command op='append_child' query='/' param='config'></command>"
+ *	"<command op='remove_attribute' query='//mychild' param='child_attribute'></command>"
+ */
+extern LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *commands, double timeout, int32_t *ec);
+
+/**
  * Subscribe to the data stream.
  *
  * All samples pushed in at the other end from this moment onwards will be queued and
