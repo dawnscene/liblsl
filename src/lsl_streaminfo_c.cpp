@@ -57,6 +57,8 @@ LIBLSL_C_API lsl_xml_ptr lsl_get_desc(lsl_streaminfo info) {
 	return info->desc().internal_object();
 }
 
+LIBLSL_C_API void lsl_set_allow_remote_populate (lsl_streaminfo info, bool allow) { info->allow_remote_populate(allow); }
+
 LIBLSL_C_API char *lsl_get_xml(lsl_streaminfo info) {
 	try {
 		std::string tmp = info->to_fullinfo_message();

@@ -302,6 +302,10 @@ public:
 	/// Hostname of the providing machine.
 	std::string hostname() const { return lsl_get_hostname(obj.get()); }
 
+	/**
+	 * Flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+	 */
+	void allow_remote_populate (bool allow) { lsl_set_allow_remote_populate(obj.get(), allow); }
 
 	// ========================
 	// === Data Description ===
@@ -930,7 +934,7 @@ public:
 	}
 
 	/**
- 	 * Send an XML-based command to mainipulate the remote streaminfo contents
+ 	 * Send an XML-based command to remotely populate the streaminfo contents of the stream outlet
 	 * Can be invoked at any time of the stream's lifetime.
 	 * @param commands The XML commands to send
 	 * @param timeout Timeout of the operation. Use LSL_FOREVER to effectively disable it.
@@ -938,13 +942,17 @@ public:
 	 * lost).
 	 * @note USE WITH EXTREMLY CAUTION as it might mess up the streaminfo contents if inappropriate query is provided
 	 * @example
-   	 *	"<command op='set_text' query='/info/name' param='MyName'></command>"
-	 *	"<command op='set_text' query='//type' param='MyType'></command>"
-	 *	"<command op='append_child' query='/info/desc' param='mychild'></command>"
-	 *	"<command op='append_attribute' query='//mychild' param='child_attribute'></command>"
-	 *	"<command op='set_value' query='//@child_attribute' param='attribute_value'></command>"
-	 *	"<command op='append_child' query='/' param='config'></command>"
-	 *	"<command op='remove_attribute' query='//mychild' param='child_attribute'></command>" 
+     *	"<set_text xpath='/info/name' text='MyName' />"
+     *	"<set_text xpath='//type' text='MyType' />"
+     *	"<append_child xpath='/info/desc' name='my_child1' />"
+     *	"<append_attribute xpath='/info/desc/my_child1' name='my_attribute1' value='attribute1_value' />"
+     *	"<append_child xpath='//desc' name='my_child2' />"
+     *	"<append_attribute xpath='//my_child2' name='my_attribute2' />"
+     *	"<set_value xpath='//@my_attribute2' value='attribute2_value' />"
+     *	"<append_child xpath='/' name='config' />"
+     *	"<remove_attribute xpath='//my_child1' name='my_attribute1' />"
+     *	"<remove_child xpath='//desc' name='my_child2' />"
+     *	"<set_name xpath='//config_1' name='config_2' />"
 	 */
 	stream_info send_commands(const char *commands, double timeout = FOREVER) {
 		int32_t ec = 0;

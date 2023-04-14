@@ -19,7 +19,8 @@ using lsl::to_string;
 stream_info_impl::stream_info_impl()
 	: channel_count_(0), nominal_srate_(0), channel_format_(cft_undefined), version_(0),
 	  v4data_port_(0), v4service_port_(0), v6data_port_(0), v6service_port_(0), created_at_(0), 
-	  shortinfo_updated_(true), fullinfo_updated_(true), shortinfo_msg_(""), fullinfo_msg_("") {
+	  shortinfo_updated_(true), fullinfo_updated_(true), shortinfo_msg_(""), fullinfo_msg_(""),
+	  allow_remote_populate_(false) {
 	// initialize XML document
 	write_xml(doc_);
 }
@@ -28,7 +29,7 @@ stream_info_impl::stream_info_impl(const std::string &name, std::string type, in
 	double nominal_srate, lsl_channel_format_t channel_format, std::string source_id)
 	: name_(name), type_(std::move(type)), channel_count_(channel_count),
 	  nominal_srate_(nominal_srate), channel_format_(channel_format),
-	  source_id_(std::move(source_id)),
+	  source_id_(std::move(source_id)), allow_remote_populate_(false),
 	  version_(api_config::get_instance()->use_protocol_version()), v4data_port_(0),
 	  v4service_port_(0), v6data_port_(0), v6service_port_(0), created_at_(0), 
 	  shortinfo_updated_(true), fullinfo_updated_(true), shortinfo_msg_(""), fullinfo_msg_("") {
@@ -74,6 +75,7 @@ void stream_info_impl::write_xml(xml_document &doc) {
 	append_text_node(info, "v6address", v6address_);
 	append_text_node(info, "v6data_port", v6data_port_);
 	append_text_node(info, "v6service_port", v6service_port_);
+	append_text_node(info, "allow_remote_populate", allow_remote_populate_? "true" : "false");
 	info.append_child("desc");
 }
 
@@ -143,6 +145,9 @@ void stream_info_impl::read_xml(xml_document &doc) {
 		v6address_ = info.child_value("v6address");
 		get_bounded_child_val(info, "v6data_port", v6data_port_, 0, 65535);
 		get_bounded_child_val(info, "v6service_port", v6service_port_, 0, 65535);
+
+		std::string allow = info.child_value("allow_remote_populate");
+		allow_remote_populate_ =  allow == "true"? true : false;
 
 		// we do not know excatly which one has been updated, so set both flag
 		shortinfo_updated_ = true;
@@ -372,6 +377,7 @@ stream_info_impl &stream_info_impl::operator=(stream_info_impl const &rhs) {
 	fullinfo_updated_ = rhs.fullinfo_updated_;
 	shortinfo_msg_ = rhs.shortinfo_msg_;
 	fullinfo_msg_ = rhs.fullinfo_msg_;
+	allow_remote_populate_ = rhs.allow_remote_populate_;
 	doc_.reset(rhs.doc_);
 	return *this;
 }
@@ -385,67 +391,78 @@ stream_info_impl::stream_info_impl(const stream_info_impl &rhs)
 	  v6service_port_(rhs.v6service_port_), uid_(rhs.uid_), created_at_(rhs.created_at_),
 	  session_id_(rhs.session_id_), hostname_(rhs.hostname_), 
 	  shortinfo_updated_(rhs.shortinfo_updated_), fullinfo_updated_(rhs.fullinfo_updated_), 
-	  shortinfo_msg_(rhs.shortinfo_msg_), fullinfo_msg_(rhs.fullinfo_msg_) {
+	  shortinfo_msg_(rhs.shortinfo_msg_), fullinfo_msg_(rhs.fullinfo_msg_),
+	  allow_remote_populate_(rhs.allow_remote_populate_) {
 	doc_.reset(rhs.doc_);
+}
+
+void stream_info_impl::allow_remote_populate(bool allow) {
+	allow_remote_populate_ = allow;
+	doc_.child("info").child("allow_remote_populate").text() = (allow ? "true" : "false");
+	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::process_commands(const std::string& commands) {
 	xml_document commands_doc;
 	commands_doc.load_string(commands.c_str());
 
-    for (xml_node command : commands_doc.children("command")) {
-		std::string op = command.attribute("op").value();
-		std::string query = command.attribute("query").value();
-		std::string param = command.attribute("param").value();
-		xpath_node_set nodes = doc_.select_nodes(query.c_str());
+	// if disabled remote populate globally, do nothing
+	if (!allow_remote_populate_) return;
+
+    for (xml_node command : commands_doc.children()) {
+		std::string op = command.name();
+		std::string xpath = command.attribute("xpath").value();
+		xpath_node_set nodes = doc_.select_nodes(xpath.c_str());
+		std::string name = command.attribute("name").value();
+		std::string value = command.attribute("value").value();
+		std::string text = command.attribute("text").value();
 
 		xml_node info_node = doc_.child("info");
 		
 		for (xpath_node node : nodes) {
-			if (node.node()) { // query matched a node
-				if (node.node().type() == node_element) { // element node could have name, childs and attributes
-					if (op == "set_text") // all element nodes could have text child
-						node.node().text() = param.c_str();
-					//otherwise, only nodes that is NOT part of shortinfo could have attribute/childs
-					else if ((node.node() != info_node && node.node().parent() != info_node) || node.node() == desc()) {
-						if (op == "append_attribute")
-							node.node().append_attribute(param.c_str());
-						else if (op == "prepend_attribute")
-							node.node().prepend_attribute(param.c_str());
-						else if (op =="append_child")
-							node.node().append_child(param.c_str());
-						else if (op == "prepend_child")
-							node.node().prepend_child(param.c_str());
-						else if (op == "set_name")
-							node.node().set_name(param.c_str());
-						else if (op == "remove_child")
-							node.node().remove_child(param.c_str());
+			if (node.node()) { // if query matched a node
+				if (node.node().type() == node_document || node.node() == desc()) {
+					if (op =="append_child" && !name.empty())
+						node.node().append_child(name.c_str());
+					else if (op == "prepend_child" && !name.empty())
+						node.node().prepend_child(name.c_str());
+					else if (op == "remove_child" && !name.empty())
+						node.node().remove_child(name.c_str());
+					else if (op == "remove_children")
+						node.node().remove_children();
+				} else if (node.node().type() == node_element) {
+					if (op == "set_text")
+						node.node().text() = text.c_str();
+					else if ((node.node() != info_node && node.node().parent() != info_node)) {
+						if (op =="append_child" && !name.empty())
+							node.node().append_child(name.c_str()).text() = text.c_str();
+						else if (op == "prepend_child" && !name.empty())
+							node.node().prepend_child(name.c_str()).text() = text.c_str();
+						else if (op == "set_name" && !name.empty())
+							node.node().set_name(name.c_str());
+						else if (op == "remove_child" && !name.empty())
+							node.node().remove_child(name.c_str());
+						else if (op == "append_attribute" && !name.empty())
+							node.node().append_attribute(name.c_str()).set_value(value.c_str());
+						else if (op == "prepend_attribute" && !name.empty())
+							node.node().prepend_attribute(name.c_str()).set_value(value.c_str());
 						else if (op == "remove_children")
 							node.node().remove_children();
-						else if (op == "remove_attribute")
-							node.node().remove_attribute(param.c_str());
+						else if (op == "remove_attribute" && !name.empty())
+							node.node().remove_attribute(name.c_str());
 						else if (op == "remove_attributes")
 							node.node().remove_attributes();
 					}
-				} else if (node.node().type()== node_pcdata || node.node().type() == node_cdata) { //text node has value only
+				} else if (node.node().type()== node_pcdata || node.node().type() == node_cdata) {
+					// text node could be populated with value
 					if (op == "set_value")
-						node.node().set_value(param.c_str());
-				} else if (node.node().type() == node_document) { // root node has children only
-					if (op =="append_child")
-						node.node().append_child(param.c_str());
-					else if (op == "prepend_child")
-						node.node().prepend_child(param.c_str());
-					else if (op == "remove_child")
-						node.node().remove_child(param.c_str());
-					else if (op == "remove_children")
-						node.node().remove_children();
+						node.node().set_value(value.c_str());
 				}
-				
-			} else { // node.attribute(), query matched an attribute
-				if (op == "set_name")
-					node.attribute().set_name(param.c_str());
+			} else { // node.attribute()
+				if (op == "set_name" && !name.empty())
+					node.attribute().set_name(name.c_str());
 				else if (op == "set_value")
-					node.attribute().set_value(param.c_str());
+					node.attribute().set_value(value.c_str());
 			}
 		}
 	}

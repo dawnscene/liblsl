@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "types.h"
+#include <stdbool.h>
 
 /// @file streaminfo.h Stream info functions
 
@@ -153,6 +154,11 @@ extern LIBLSL_C_API const char *lsl_get_hostname(lsl_streaminfo info);
 * try to lay out your meta-data in agreement with these recommendations for compatibility with other applications.
 */
 extern LIBLSL_C_API lsl_xml_ptr lsl_get_desc(lsl_streaminfo info);
+
+/**
+ * Flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+ */
+extern LIBLSL_C_API void lsl_set_allow_remote_populate (lsl_streaminfo info, bool allow);
 
 /**
  * Retrieve the entire streaminfo in XML format.

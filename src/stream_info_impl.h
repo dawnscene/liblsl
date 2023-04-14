@@ -224,6 +224,7 @@ public:
 	/// helper function to calculate the buffer size in samples for inlets and outlets
 	uint32_t calc_transport_buf_samples(int32_t requested_len, lsl_transport_options_t flags) const;
 
+	void allow_remote_populate(bool allow);
 
 	void process_commands(const std::string& commands);
 
@@ -235,6 +236,8 @@ protected:
 	void read_xml(pugi::xml_document &doc);
 
 private:
+	// global flag to allow remote update of streaminfo
+	bool allow_remote_populate_;
 	// data information
 	std::string name_;
 	std::string type_;

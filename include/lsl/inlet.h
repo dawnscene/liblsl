@@ -65,7 +65,7 @@ extern LIBLSL_C_API void lsl_destroy_inlet(lsl_inlet in);
 extern LIBLSL_C_API lsl_streaminfo lsl_get_fullinfo(lsl_inlet in, double timeout, int32_t *ec);
 
 /**
- * Send an XML-based command to mainipulate the remote streaminfo contents
+ * Send an XML-based command to remotely populate the streaminfo contents of the stream outlet
  * Can be invoked at any time of the stream's lifetime.
  * @param in The lsl_inlet object to act on.
  * @param commands The XML commands to send
@@ -76,14 +76,17 @@ extern LIBLSL_C_API lsl_streaminfo lsl_get_fullinfo(lsl_inlet in, double timeout
  * @note It is the user's responsibility to destroy it when it is no longer needed.
  * @note USE WITH EXTREMLY CAUTION as it might mess up the streaminfo contents if inappropriate query is provided
  * @example
- *	"<command op='set_text' query='/info/name' param='MyName'></command>"
- *	"<command op='set_text' query='//type' param='MyType'></command>"
- *	"<command op='append_child' query='/info/desc' param='mychild'></command>"
- *	"<command op='append_attribute' query='//mychild' param='child_attribute'></command>"
- *	"<command op='set_value' query='//@child_attribute' param='attribute_value'></command>"
- *	"<command op='append_child' query='/' param='config'></command>"
- *	"<command op='remove_attribute' query='//mychild' param='child_attribute'></command>"
- */
+ *	"<set_text xpath='/info/name' text='MyName' />"
+ *	"<set_text xpath='//type' text='MyType' />"
+ *	"<append_child xpath='/info/desc' name='my_child1' />"
+ *	"<append_attribute xpath='/info/desc/my_child1' name='my_attribute1' value='attribute1_value' />"
+ *	"<append_child xpath='//desc' name='my_child2' />"
+ *	"<append_attribute xpath='//my_child2' name='my_attribute2' />"
+ *	"<set_value xpath='//@my_attribute2' value='attribute2_value' />"
+ *	"<append_child xpath='/' name='config' />"
+ *	"<remove_attribute xpath='//my_child1' name='my_attribute1' />"
+ *	"<remove_child xpath='//desc' name='my_child2' />"
+ *	"<set_name xpath='//config_1' name='config_2' />" */
 extern LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *commands, double timeout, int32_t *ec);
 
 /**
