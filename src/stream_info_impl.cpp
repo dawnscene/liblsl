@@ -19,7 +19,6 @@ using lsl::to_string;
 stream_info_impl::stream_info_impl()
 	: channel_count_(0), nominal_srate_(0), channel_format_(cft_undefined), version_(0),
 	  v4data_port_(0), v4service_port_(0), v6data_port_(0), v6service_port_(0), created_at_(0), 
-	  shortinfo_updated_(true), fullinfo_updated_(true), shortinfo_msg_(""), fullinfo_msg_(""),
 	  allow_remote_populate_(false) {
 	// initialize XML document
 	write_xml(doc_);
@@ -31,8 +30,7 @@ stream_info_impl::stream_info_impl(const std::string &name, std::string type, in
 	  nominal_srate_(nominal_srate), channel_format_(channel_format),
 	  source_id_(std::move(source_id)), allow_remote_populate_(false),
 	  version_(api_config::get_instance()->use_protocol_version()), v4data_port_(0),
-	  v4service_port_(0), v6data_port_(0), v6service_port_(0), created_at_(0), 
-	  shortinfo_updated_(true), fullinfo_updated_(true), shortinfo_msg_(""), fullinfo_msg_("") {
+	  v4service_port_(0), v6data_port_(0), v6service_port_(0), created_at_(0) {
 	if (name.empty()) throw std::invalid_argument("The name of a stream must be non-empty.");
 	if (channel_count < 0)
 		throw std::invalid_argument("The channel_count of a stream must be nonnegative.");
@@ -149,9 +147,6 @@ void stream_info_impl::read_xml(xml_document &doc) {
 		std::string allow = info.child_value("allow_remote_populate");
 		allow_remote_populate_ =  allow == "true"? true : false;
 
-		// we do not know excatly which one has been updated, so set both flag
-		shortinfo_updated_ = true;
-		fullinfo_updated_ = true;
 	} catch (std::exception &e) {
 		// reset the stream info to blank state
 		*this = stream_info_impl();
@@ -162,18 +157,14 @@ void stream_info_impl::read_xml(xml_document &doc) {
 // === Protocol Support Operations Implementation ===
 
 std::string stream_info_impl::to_shortinfo_message() {
-	if (shortinfo_updated_) {
-		shortinfo_updated_ = false;
-		// make a new document (with an empty <desc> field)
-		xml_document tmp;
-		write_xml(tmp);
-		// write it to a stream
-		std::ostringstream os;
-		tmp.save(os);
-		// and get the string
-		return shortinfo_msg_ = os.str();
-	} else
-		return shortinfo_msg_;
+	// make a new document (with an empty <desc> field)
+	xml_document tmp;
+	write_xml(tmp);
+	// write it to a stream
+	std::ostringstream os;
+	tmp.save(os);
+	// and get the string
+	return os.str();
 }
 
 void stream_info_impl::from_shortinfo_message(const std::string &m) {
@@ -184,15 +175,11 @@ void stream_info_impl::from_shortinfo_message(const std::string &m) {
 }
 
 std::string stream_info_impl::to_fullinfo_message() {
-	if (fullinfo_updated_) {
-		fullinfo_updated_ = false;
-		// write the doc to a stream
-		std::ostringstream os;
-		doc_.save(os);
-		// and get the string
-		return fullinfo_msg_ = os.str();
-	} else
-		return fullinfo_msg_;
+	// write the doc to a stream
+	std::ostringstream os;
+	doc_.save(os);
+	// and get the string
+	return os.str();
 }
 
 void stream_info_impl::from_fullinfo_message(const std::string &m) {
@@ -284,74 +271,62 @@ uint32_t lsl::stream_info_impl::calc_transport_buf_samples(
 void stream_info_impl::version(int v) {
 	version_ = v;
 	doc_.child("info").child("version").first_child().set_value(to_string(version_ / 100.).c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::created_at(double v) {
 	created_at_ = v;
 	doc_.child("info").child("created_at").first_child().set_value(to_string(created_at_).c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::uid(const std::string &v) {
 	uid_ = v;
 	doc_.child("info").child("uid").first_child().set_value(uid_.c_str());
-	shortinfo_updated_ = true;
 }
 
 const std::string& stream_info_impl::reset_uid()
 {
 	uid(UUID::random().to_string());
-	shortinfo_updated_ = true;
 	return uid_;
 }
 
 void stream_info_impl::session_id(const std::string &v) {
 	session_id_ = v;
 	doc_.child("info").child("session_id").first_child().set_value(session_id_.c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::hostname(const std::string &v) {
 	hostname_ = v;
 	doc_.child("info").child("hostname").first_child().set_value(hostname_.c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v4address(const std::string &v) {
 	v4address_ = v;
 	doc_.child("info").child("v4address").first_child().set_value(v4address_.c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v4data_port(uint16_t v) {
 	v4data_port_ = v;
 	doc_.child("info").child("v4data_port").first_child().text().set(v4data_port_);
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v4service_port(uint16_t v) {
 	v4service_port_ = v;
 	doc_.child("info").child("v4service_port").first_child().text().set(v4service_port_);
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v6address(const std::string &v) {
 	v6address_ = v;
 	doc_.child("info").child("v6address").first_child().set_value(v6address_.c_str());
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v6data_port(uint16_t v) {
 	v6data_port_ = v;
 	doc_.child("info").child("v6data_port").first_child().text().set(v6data_port_);
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::v6service_port(uint16_t v) {
 	v6service_port_ = v;
 	doc_.child("info").child("v6service_port").first_child().text().set(v6service_port_);
-	shortinfo_updated_ = true;
 }
 
 stream_info_impl &stream_info_impl::operator=(stream_info_impl const &rhs) {
@@ -373,10 +348,6 @@ stream_info_impl &stream_info_impl::operator=(stream_info_impl const &rhs) {
 	created_at_ = rhs.created_at_;
 	session_id_ = rhs.session_id_;
 	hostname_ = rhs.hostname_;
-	shortinfo_updated_ = rhs.shortinfo_updated_;
-	fullinfo_updated_ = rhs.fullinfo_updated_;
-	shortinfo_msg_ = rhs.shortinfo_msg_;
-	fullinfo_msg_ = rhs.fullinfo_msg_;
 	allow_remote_populate_ = rhs.allow_remote_populate_;
 	doc_.reset(rhs.doc_);
 	return *this;
@@ -390,8 +361,6 @@ stream_info_impl::stream_info_impl(const stream_info_impl &rhs)
 	  v6address_(rhs.v6address_), v6data_port_(rhs.v6data_port_),
 	  v6service_port_(rhs.v6service_port_), uid_(rhs.uid_), created_at_(rhs.created_at_),
 	  session_id_(rhs.session_id_), hostname_(rhs.hostname_), 
-	  shortinfo_updated_(rhs.shortinfo_updated_), fullinfo_updated_(rhs.fullinfo_updated_), 
-	  shortinfo_msg_(rhs.shortinfo_msg_), fullinfo_msg_(rhs.fullinfo_msg_),
 	  allow_remote_populate_(rhs.allow_remote_populate_) {
 	doc_.reset(rhs.doc_);
 }
@@ -399,7 +368,6 @@ stream_info_impl::stream_info_impl(const stream_info_impl &rhs)
 void stream_info_impl::allow_remote_populate(bool allow) {
 	allow_remote_populate_ = allow;
 	doc_.child("info").child("allow_remote_populate").text() = (allow ? "true" : "false");
-	shortinfo_updated_ = true;
 }
 
 void stream_info_impl::process_commands(const std::string& commands) {

@@ -261,11 +261,6 @@ private:
 	pugi::xml_document doc_;
 	// cached query results
 	query_cache cached_;
-	// some cached data
-	bool shortinfo_updated_;
-	bool fullinfo_updated_;
-	std::string shortinfo_msg_; // pre-computed short-info
-	std::string fullinfo_msg_;	// pre-computed full-info
 };
 
 
