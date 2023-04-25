@@ -38,7 +38,7 @@ public:
 	 * of RAM. Depends on `flags` as calculated in `stream_info_impl::calc_transport_buf_samples()`
 	 * @param flags Bitwise-OR'd flags from lsl_transport_options_t
 	 */
-	stream_outlet_impl(const stream_info_impl &info, int32_t chunk_size = 0,
+	stream_outlet_impl(stream_info_impl &info, int32_t chunk_size = 0,
 		int32_t requested_bufsize = 900, lsl_transport_options_t flags = transp_default);
 
 	/**
