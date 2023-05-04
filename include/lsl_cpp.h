@@ -232,6 +232,12 @@ public:
 	int32_t channel_count() const { return lsl_get_channel_count(obj.get()); }
 
 	/**
+	* Set the number of channels of the stream.
+	* A stream has at least one channels; the channel count stays constant for all samples.
+	*/
+	void channel_count(int32_t value) { lsl_set_channel_count(obj.get(), value); }
+
+	/**
 	 * Sampling rate of the stream, according to the source (in Hz).
 	 *
 	 * If a stream is irregularly sampled, this should be set to IRREGULAR_RATE.
@@ -243,6 +249,19 @@ public:
 	 * specs of the device.
 	 */
 	double nominal_srate() const { return lsl_get_nominal_srate(obj.get()); }
+
+	/**
+	 * Set sampling rate of the stream, according to the source (in Hz).
+	 *
+	 * If a stream is irregularly sampled, this should be set to #LSL_IRREGULAR_RATE.
+	 *
+	 * Note that no data will be lost even if this sampling rate is incorrect or if a device has
+	 * temporary hiccups, since all samples will be recorded anyway (except for those dropped by the
+	 * device itself). However, when the recording is imported into an application, a good importer may
+	 * correct such errors more accurately if the advertised sampling rate was close to the specs of the
+	 * device.
+	 */
+	void nominal_srate(double value) const { lsl_set_nominal_srate(obj.get(), value); }
 
 	/**
 	 * Channel format of the stream.

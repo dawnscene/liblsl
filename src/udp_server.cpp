@@ -130,7 +130,7 @@ void udp_server::process_shortinfo_request(std::istream& request_stream)
 	DLOG_F(2, "%p shortinfo req from %s for %s", (void *)this,
 		remote_endpoint_.address().to_string().c_str(), query.c_str());
 	// check query
-	if (info_->matches_query(query)) {
+	if (info_->matches_query(query, true)) {
 		LOG_F(3, "%p query matches, replying to port %d", (void *)this, return_port);
 		// query matches: send back reply
 		udp::endpoint return_endpoint(remote_endpoint_.address(), return_port);

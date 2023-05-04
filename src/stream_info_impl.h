@@ -111,9 +111,13 @@ public:
 
 	/// Get the number of channels of a stream.
 	uint32_t channel_count() const { return channel_count_; }
+	/// Set the number of channels of a stream.
+	void channel_count (uint32_t v);
 
 	/// Get the sampling rate of a stream (in Hz) as advertised by the device.
 	double nominal_srate() const { return nominal_srate_; }
+	/// Set the sampling rate of a stream (in Hz) as advertised by the device.
+	void nominal_srate (double v);
 
 	/// Get the channel format of a stream.
 	lsl_channel_format_t channel_format() const { return channel_format_; }

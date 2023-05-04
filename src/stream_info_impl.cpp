@@ -241,6 +241,16 @@ bool query_cache::matches_query(const xml_document &doc, const std::string &quer
 	}
 }
 
+void stream_info_impl::channel_count (uint32_t v) {
+	channel_count_ = v;
+	doc_.child("info").child("channel_count").first_child().set_value(to_string(v).c_str());
+}
+
+void stream_info_impl::nominal_srate (double v) {
+	nominal_srate_ = v;
+	doc_.child("info").child("nominal_srate").first_child().set_value(to_string(v).c_str());
+}
+
 int stream_info_impl::channel_bytes() const {
 	const int channel_format_sizes[] = {0, sizeof(float), sizeof(double), sizeof(std::string),
 		sizeof(int32_t), sizeof(int16_t), sizeof(int8_t), 8};

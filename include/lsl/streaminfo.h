@@ -75,6 +75,12 @@ extern LIBLSL_C_API const char *lsl_get_type(lsl_streaminfo info);
 extern LIBLSL_C_API int32_t lsl_get_channel_count(lsl_streaminfo info);
 
 /**
+* Set the number of channels of the stream.
+* A stream has at least one channels; the channel count stays constant for all samples.
+*/
+extern LIBLSL_C_API void lsl_set_channel_count(lsl_streaminfo info, int32_t channel_count);
+
+/**
  * Sampling rate of the stream, according to the source (in Hz).
  *
  * If a stream is irregularly sampled, this should be set to #LSL_IRREGULAR_RATE.
@@ -86,6 +92,18 @@ extern LIBLSL_C_API int32_t lsl_get_channel_count(lsl_streaminfo info);
  * device.
  */
 extern LIBLSL_C_API double lsl_get_nominal_srate(lsl_streaminfo info);
+/**
+ * Set sampling rate of the stream, according to the source (in Hz).
+ *
+ * If a stream is irregularly sampled, this should be set to #LSL_IRREGULAR_RATE.
+ *
+ * Note that no data will be lost even if this sampling rate is incorrect or if a device has
+ * temporary hiccups, since all samples will be recorded anyway (except for those dropped by the
+ * device itself). However, when the recording is imported into an application, a good importer may
+ * correct such errors more accurately if the advertised sampling rate was close to the specs of the
+ * device.
+ */
+extern LIBLSL_C_API void lsl_set_nominal_srate(lsl_streaminfo info, double norminal_srate);
 
 /**
  * Channel format of the stream.

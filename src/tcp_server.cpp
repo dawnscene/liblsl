@@ -354,7 +354,7 @@ void client_session::handle_read_query_outcome(err_t err) {
 		query = trim(query);
 		auto serv = serv_.lock();
 		if (!serv) return;
-		if (serv->info_->matches_query(query)) {
+		if (serv->info_->matches_query(query, true)) {
 			// matches: reply (otherwise just close the stream)
 			async_write(sock_, asio::buffer(serv->info_->to_shortinfo_message()),
 				[serv](err_t /*unused*/, std::size_t /*unused*/) {

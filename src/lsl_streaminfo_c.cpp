@@ -39,7 +39,9 @@ LIBLSL_C_API void lsl_destroy_streaminfo(lsl_streaminfo info) {
 LIBLSL_C_API const char *lsl_get_type(lsl_streaminfo info) { return info->type().c_str(); }
 LIBLSL_C_API const char *lsl_get_name(lsl_streaminfo info) { return info->name().c_str(); }
 LIBLSL_C_API int32_t lsl_get_channel_count(lsl_streaminfo info) { return info->channel_count(); }
+LIBLSL_C_API void lsl_set_channel_count(lsl_streaminfo info, int32_t channel_count) { info->channel_count(channel_count); }
 LIBLSL_C_API double lsl_get_nominal_srate(lsl_streaminfo info) { return info->nominal_srate(); }
+LIBLSL_C_API void lsl_set_nominal_srate(lsl_streaminfo info, double nominal_srate) { info->nominal_srate(nominal_srate); }
 LIBLSL_C_API lsl_channel_format_t lsl_get_channel_format(lsl_streaminfo info) {
 	return info->channel_format();
 }

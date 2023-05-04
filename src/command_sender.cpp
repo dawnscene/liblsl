@@ -28,13 +28,15 @@ const lsl::stream_info_impl &lsl::command_sender::send_commands(std::string comm
 
 	commands_ = commands;
 
-	// start thread if not yet running
-	if (!command_thread_.joinable()) command_thread_ = std::thread(&command_sender::command_thread, this);
-	// wait until we are ready to return a result (or we time out)
-	if (timeout >= FOREVER)
-		fullinfo_upd_.wait(lock);
-	else if (fullinfo_upd_.wait_for(lock, std::chrono::duration<double>(timeout)) == std::cv_status::timeout)
-		throw timeout_error("The info() operation timed out.");
+	if (!conn_.lost()) {
+		// start thread if not yet running
+		if (!command_thread_.joinable()) command_thread_ = std::thread(&command_sender::command_thread, this);
+		// wait until we are ready to return a result (or we time out)
+		if (timeout >= FOREVER)
+			fullinfo_upd_.wait(lock);
+		else if (fullinfo_upd_.wait_for(lock, std::chrono::duration<double>(timeout)) == std::cv_status::timeout)
+			throw timeout_error("The info() operation timed out.");
+	}
 	if (conn_.lost())
 		throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
 						 "re-resolve the source and re-create the inlet.");

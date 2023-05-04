@@ -27,6 +27,7 @@ const lsl::stream_info_impl &lsl::info_receiver::info(double timeout) {
 	std::unique_lock<std::mutex> lock(fullinfo_mut_);
 	auto info_ready = [this]() { return fullinfo_ || conn_.lost(); };
 	if (!conn_.lost()) {
+		fullinfo_ = 0;
 		// start thread if not yet running
 		if (!info_thread_.joinable()) info_thread_ = std::thread(&info_receiver::info_thread, this);
 		// wait until we are ready to return a result (or we time out)
@@ -38,6 +39,9 @@ const lsl::stream_info_impl &lsl::info_receiver::info(double timeout) {
 	if (conn_.lost())
 		throw lost_error("The stream read by this inlet has been lost. To recover, you need to "
 						 "re-resolve the source and re-create the inlet.");
+
+	if (info_thread_.joinable()) info_thread_.join();
+
 	return *fullinfo_;
 }
 
@@ -60,6 +64,7 @@ void lsl::info_receiver::info_thread() {
 				os << server_stream.rdbuf();
 				stream_info_impl info;
 				std::string msg = os.str();
+				if (msg.empty()) continue;
 				info.from_fullinfo_message(msg);
 				// if this is not a valid streaminfo we retry
 				if (!info.created_at()) continue;
