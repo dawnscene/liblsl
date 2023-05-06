@@ -27,14 +27,15 @@ const lsl::stream_info_impl &lsl::command_sender::send_commands(std::string comm
 	std::unique_lock<std::mutex> lock(fullinfo_mut_);
 
 	commands_ = commands;
-
+	auto info_ready = [this]() { return fullinfo_ || conn_.lost(); };
 	if (!conn_.lost()) {
+		fullinfo_ = 0;
 		// start thread if not yet running
 		if (!command_thread_.joinable()) command_thread_ = std::thread(&command_sender::command_thread, this);
 		// wait until we are ready to return a result (or we time out)
 		if (timeout >= FOREVER)
-			fullinfo_upd_.wait(lock);
-		else if (fullinfo_upd_.wait_for(lock, std::chrono::duration<double>(timeout)) == std::cv_status::timeout)
+			fullinfo_upd_.wait(lock, info_ready);
+		else if (fullinfo_upd_.wait_for(lock, std::chrono::duration<double>(timeout), info_ready))
 			throw timeout_error("The info() operation timed out.");
 	}
 	if (conn_.lost())

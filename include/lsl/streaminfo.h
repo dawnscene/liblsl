@@ -123,6 +123,15 @@ extern LIBLSL_C_API lsl_channel_format_t lsl_get_channel_format(lsl_streaminfo i
 extern LIBLSL_C_API const char *lsl_get_source_id(lsl_streaminfo info);
 
 /**
+ * Set Unique identifier of the stream's source.
+ *
+ * The unique source (or device) identifier is an optional piece of information that, if available,
+ * allows that endpoints (such as the recording program) can re-acquire a stream automatically once
+ * it is back online.
+ */
+extern LIBLSL_C_API void lsl_set_source_id(lsl_streaminfo info, const char *source_id);
+
+/**
 * Protocol version used to deliver the stream.
 */
 extern LIBLSL_C_API int32_t lsl_get_version(lsl_streaminfo info);

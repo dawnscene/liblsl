@@ -281,6 +281,14 @@ public:
 	 * automatically once it is back online.
 	 */
 	std::string source_id() const { return lsl_get_source_id(obj.get()); }
+	/**
+	 * Set Unique identifier of the stream's source.
+	 *
+	 * The unique source (or device) identifier is an optional piece of information that, if
+	 * available, allows that endpoints (such as the recording program) can re-acquire a stream
+	 * automatically once it is back online.
+	 */
+	void source_id(std::string source_id) { lsl_set_source_id(obj.get(), source_id.c_str()); }
 
 
 	// ======================================
@@ -1652,7 +1660,7 @@ public:
 	void remove_child(const std::string &name) { lsl_remove_child_n(obj, (name.c_str())); }
 
 	/// Remove a specified child element.
-	void remove_child(const xml_element &e) { lsl_remove_child(obj, e.obj); }
+	void remove_children() { lsl_remove_children(obj); }
 
 private:
 	lsl_xml_ptr obj;
@@ -1756,7 +1764,7 @@ inline int32_t check_error(int32_t ec) {
 		switch (ec) {
 		case lsl_timeout_error: throw timeout_error("The operation has timed out.");
 		case lsl_lost_error:
-			throw timeout_error(
+			throw lost_error(
 				"The stream has been lost; to continue reading, you need to re-resolve it.");
 		case lsl_argument_error:
 			throw std::invalid_argument("An argument was incorrectly specified.");

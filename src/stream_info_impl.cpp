@@ -251,6 +251,11 @@ void stream_info_impl::nominal_srate (double v) {
 	doc_.child("info").child("nominal_srate").first_child().set_value(to_string(v).c_str());
 }
 
+void stream_info_impl::source_id (const std::string &v) {
+	source_id_ = v;
+	doc_.child("info").child("source_id").first_child().set_value(v.c_str());
+}
+
 int stream_info_impl::channel_bytes() const {
 	const int channel_format_sizes[] = {0, sizeof(float), sizeof(double), sizeof(std::string),
 		sizeof(int32_t), sizeof(int16_t), sizeof(int8_t), 8};

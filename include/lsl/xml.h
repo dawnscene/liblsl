@@ -100,4 +100,7 @@ extern LIBLSL_C_API void lsl_remove_child_n(lsl_xml_ptr e, const char *name);
 /** Remove a specified child element. */
 extern LIBLSL_C_API void lsl_remove_child(lsl_xml_ptr e, lsl_xml_ptr e2);
 
+/** Remove all child elements. */
+extern LIBLSL_C_API void lsl_remove_children(lsl_xml_ptr e);
+
 /// @}

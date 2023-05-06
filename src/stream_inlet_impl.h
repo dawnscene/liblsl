@@ -244,6 +244,27 @@ public:
 	 */
 	const stream_info_impl &info(double timeout = FOREVER) { return info_receiver_.info(timeout); }
 
+/**
+ 	 * Send an XML-based command to remotely populate the streaminfo contents of the stream outlet
+	 * Can be invoked at any time of the stream's lifetime.
+	 * @param commands The XML commands to send
+	 * @param timeout Timeout of the operation. Use LSL_FOREVER to effectively disable it.
+	 * @throws timeout_error (if the timeout expires), or lost_error (if the stream source has been
+	 * lost).
+	 * @note USE WITH EXTREMLY CAUTION as it might mess up the streaminfo contents if inappropriate query is provided
+	 * @example
+     *	"<set_text xpath='/info/name' text='MyName' />"
+     *	"<set_text xpath='//type' text='MyType' />"
+     *	"<append_child xpath='/info/desc' name='my_child1' />"
+     *	"<append_attribute xpath='/info/desc/my_child1' name='my_attribute1' value='attribute1_value' />"
+     *	"<append_child xpath='//desc' name='my_child2' />"
+     *	"<append_attribute xpath='//my_child2' name='my_attribute2' />"
+     *	"<set_value xpath='//@my_attribute2' value='attribute2_value' />"
+     *	"<append_child xpath='/' name='config' />"
+     *	"<remove_attribute xpath='//my_child1' name='my_attribute1' />"
+     *	"<remove_child xpath='//desc' name='my_child2' />"
+     *	"<set_name xpath='//config_1' name='config_2' />"
+	 */
 	const stream_info_impl &send_commands (std::string commands, double timeout = FOREVER) { return command_sender_.send_commands(commands, timeout); }
 
 	/**

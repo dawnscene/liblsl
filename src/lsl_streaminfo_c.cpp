@@ -48,6 +48,7 @@ LIBLSL_C_API lsl_channel_format_t lsl_get_channel_format(lsl_streaminfo info) {
 LIBLSL_C_API const char *lsl_get_source_id(lsl_streaminfo info) {
 	return info->source_id().c_str();
 }
+LIBLSL_C_API void lsl_set_source_id(lsl_streaminfo info, const char *source_id) { info->source_id(source_id); }
 LIBLSL_C_API int32_t lsl_get_version(lsl_streaminfo info) { return info->version(); }
 LIBLSL_C_API double lsl_get_created_at(lsl_streaminfo info) { return info->created_at(); }
 LIBLSL_C_API const char *lsl_get_uid(lsl_streaminfo info) { return info->uid().c_str(); }

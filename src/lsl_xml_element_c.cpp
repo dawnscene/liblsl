@@ -65,6 +65,9 @@ LIBLSL_C_API void lsl_remove_child_n(lsl_xml_ptr e, const char *name) {
 LIBLSL_C_API void lsl_remove_child(lsl_xml_ptr e, lsl_xml_ptr e2) {
 	xml_node(e).remove_child(xml_node(e2));
 }
+LIBLSL_C_API void lsl_remove_children(lsl_xml_ptr e) {
+	xml_node(e).remove_children();
+}
 
 LIBLSL_C_API int32_t lsl_set_child_value(lsl_xml_ptr e, const char *name, const char *value) {
 	return xml_node(e).child(name).first_child().set_value(value);

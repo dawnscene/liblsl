@@ -124,6 +124,7 @@ public:
 
 	/// Get the unique source identifier of a stream, if any.
 	const std::string &source_id() const { return source_id_; }
+	void source_id(const std::string &v);
 
 	/// Get the number of bytes per channel (returns 0 for string-typed channels).
 	int channel_bytes() const;
