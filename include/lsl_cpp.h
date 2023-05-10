@@ -981,11 +981,26 @@ public:
      *	"<remove_child xpath='//desc' name='my_child2' />"
      *	"<set_name xpath='//config_1' name='config_2' />"
 	 */
-	stream_info send_commands(const char *commands, double timeout = FOREVER) {
+	stream_info send_commands(std::string commands, double timeout = FOREVER) {
 		int32_t ec = 0;
-		lsl_streaminfo res = lsl_send_commands(obj.get(), commands, timeout, &ec);
+		lsl_streaminfo res = lsl_send_commands(obj.get(), commands.c_str(), timeout, &ec);
 		check_error(ec);
 		return stream_info(res);
+	}
+
+	/**
+	 * Helper function to make a command to be send through lsl_send_commands
+	 */
+	std::string make_command(const std::string &command, const std::string &xpath,
+		const std::string &name, const std::string &value, const std::string &text) {
+		
+		int32_t ec = 0;
+		const char *p = lsl_make_command(obj.get(), command.c_str(), xpath.c_str(), 
+			name.c_str(), value.c_str(), text.c_str(), &ec);
+		std::string cmd_str = p;
+		delete p;
+		check_error(ec);
+		return cmd_str;
 	}
 
 	/** Subscribe to the data stream.
@@ -1536,6 +1551,48 @@ private:
 // =====================
 // ==== XML Element ====
 // =====================
+class xml_element;
+
+class xml_attribute {
+public:
+	/// Constructor.
+	xml_attribute(lsl_xml_attribute_ptr obj = 0) : obj(obj) {}
+
+	/// Whether this attribute is empty.
+	bool empty() const { return lsl_attribute_empty(obj) != 0; }
+
+	/// Name of the attribute.
+	const char *name() const { return lsl_attribute_name(obj); }
+
+	/// Value of the attribute.
+	const char *value() const { return lsl_attribute_value(obj); }
+
+	/// Convert the attribute value to specific types.
+	const char *as_string() { return lsl_attribute_as_string(obj); }
+	int as_int() { return lsl_attribute_as_int(obj); }
+	unsigned int as_uint() { return lsl_attribute_as_uint(obj); }
+	double as_double() { return lsl_attribute_as_double(obj); }
+	float as_float() { return lsl_attribute_as_float(obj); }
+	bool as_bool() { return lsl_attribute_as_bool(obj); }
+
+	/// Set the attribute value by specific types.
+	void set_name(const std::string &name) { lsl_attribute_set_name(obj, name.c_str()); }
+	void set_value(const std::string &rhs) { lsl_attribute_set_value_s(obj, rhs.c_str()); }
+	void set_value(int rhs) { lsl_attribute_set_value_i(obj, rhs); }
+	void set_value(unsigned int rhs) { lsl_attribute_set_value_ui(obj, rhs); }
+	void set_value(double rhs) { lsl_attribute_set_value_d(obj, rhs); }
+	void set_value(float rhs) { lsl_attribute_set_value_f(obj, rhs); }
+	void set_value(bool rhs) { lsl_attribute_set_value_b(obj, rhs); }
+
+	/// Get the next sibling attribute.
+ 	xml_attribute next_attribute() { return lsl_attribute_next_attribute(obj); }
+
+	/// Get the previous sibling attribute.
+ 	xml_attribute previous_attribute()  { return lsl_attribute_previous_attribute(obj); }
+
+private:
+	lsl_xml_attribute_ptr obj;
+};
 
 /**
  * A lightweight XML element tree; models the .desc() field of stream_info.
@@ -1553,6 +1610,11 @@ public:
 
 
 	// === Tree Navigation ===
+	/// Get the first attribute of the element.
+	xml_attribute first_attribute() const { return lsl_first_attribute(obj); }
+
+	/// Get the last attribute of the element.
+	xml_attribute last_attribute() const { return lsl_last_attribute(obj); }
 
 	/// Get the first child of the element.
 	xml_element first_child() const { return lsl_first_child(obj); }
@@ -1574,6 +1636,11 @@ public:
 
 	/// Get a child with a specified name.
 	xml_element child(const std::string &name) const { return lsl_child(obj, (name.c_str())); }
+
+	/// Get an attribute with a specific name.
+	xml_attribute attribute(const std::string &name) {
+		return lsl_attribute(obj, name.c_str());
+	}
 
 	/// Get the next sibling with the specified name.
 	xml_element next_sibling(const std::string &name) const {
@@ -1640,6 +1707,16 @@ public:
 	 */
 	bool set_value(const std::string &rhs) { return lsl_set_value(obj, rhs.c_str()) != 0; }
 
+	/// Append an attribute element with the specified name.
+	xml_attribute append_attribute(const std::string &name) {
+		return lsl_append_attribute(obj, name.c_str());
+	}
+
+	/// Prepend an attribute element with the specified name.
+	xml_attribute prepend_attribute(const std::string &name) {
+		return lsl_prepend_attribute(obj, name.c_str());
+	}
+
 	/// Append a child element with the specified name.
 	xml_element append_child(const std::string &name) {
 		return lsl_append_child(obj, name.c_str());
@@ -1656,6 +1733,10 @@ public:
 	/// Prepend a child element with the specified name.
 	xml_element prepend_copy(const xml_element &e) { return lsl_prepend_copy(obj, e.obj); }
 
+	/// Remove an attribute with the specified name.
+	void remove_attribute(const std::string &name) { lsl_remove_attribute_n(obj, name.c_str()); }
+
+	void remove_attributes() { lsl_remove_attributes(obj); }
 	/// Remove a child element with the specified name.
 	void remove_child(const std::string &name) { lsl_remove_child_n(obj, (name.c_str())); }
 

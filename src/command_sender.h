@@ -41,6 +41,9 @@ public:
 	 */
 	const stream_info_impl &send_commands(std::string commands, double timeout = FOREVER);
 
+	std::string make_command(const std::string &command, const std::string &xpath, 
+    	const std::string &name, const std::string &value, const std::string &text);
+
 private:
 	/// The command sender thread.
 	void command_thread();

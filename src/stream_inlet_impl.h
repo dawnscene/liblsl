@@ -267,6 +267,11 @@ public:
 	 */
 	const stream_info_impl &send_commands (std::string commands, double timeout = FOREVER) { return command_sender_.send_commands(commands, timeout); }
 
+	const std::string make_command (const std::string &command, const std::string &xpath, 
+    	const std::string &name, const std::string &value, const std::string &text) {
+		return command_sender_.make_command(command, xpath, name, value, text);
+	}
+
 	/**
 	 * Retrieve an estimated time correction offset for the given stream.
 	 *

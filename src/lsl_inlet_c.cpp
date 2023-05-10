@@ -51,6 +51,15 @@ LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *commands
 	return nullptr;
 }
 
+LIBLSL_C_API const char *lsl_make_command(lsl_inlet in, const char *command, const char *xpath,
+	const char *name, const char *value, const char *text, int32_t *ec) {
+	try {
+		return (new std::string(in->make_command(command, xpath, name, value, text)))->c_str();
+	}
+	LSL_STORE_EXCEPTION_IN(ec)
+	return nullptr; 
+}
+
 LIBLSL_C_API void lsl_open_stream(lsl_inlet in, double timeout, int32_t *ec) {
 	if (ec) *ec = lsl_no_error;
 	try {

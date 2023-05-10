@@ -90,6 +90,12 @@ extern LIBLSL_C_API lsl_streaminfo lsl_get_fullinfo(lsl_inlet in, double timeout
 extern LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *commands, double timeout, int32_t *ec);
 
 /**
+ * Helper function to make a command to be send through lsl_send_commands
+ */
+extern LIBLSL_C_API const char *lsl_make_command(lsl_inlet in, const char *command, const char *xpath,
+	const char *name, const char *value, const char *text, int32_t *ec);
+
+/**
  * Subscribe to the data stream.
  *
  * All samples pushed in at the other end from this moment onwards will be queued and

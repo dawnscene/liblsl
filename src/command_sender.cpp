@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <pugixml.hpp>
 
 lsl::command_sender::command_sender(inlet_connection &conn) : conn_(conn) {
 	conn_.register_onlost(this, &fullinfo_upd_);
@@ -45,6 +46,31 @@ const lsl::stream_info_impl &lsl::command_sender::send_commands(std::string comm
 	if (command_thread_.joinable()) command_thread_.join();
 	
 	return *fullinfo_;
+}
+
+std::string lsl::command_sender::make_command(const std::string &command, const std::string &xpath, 
+    const std::string &name, const std::string &value, const std::string &text) {
+    
+    pugi::xml_document doc;
+    pugi::xml_node cmd = doc.append_child();
+	
+	cmd.set_name(command.c_str());
+
+    if (!xpath.empty())
+        cmd.append_attribute("xpath").set_value(xpath.c_str());
+    if (!name.empty())
+        cmd.append_attribute("name").set_value(name.c_str());
+    if (!value.empty())
+        cmd.append_attribute("value").set_value(value.c_str());
+    if (!text.empty())
+        cmd.append_attribute("text").set_value(text.c_str());
+
+	// write the doc to a stream
+	std::ostringstream os;
+	doc.print(os, "\t", pugi::format_no_escapes | format_raw | format_attribute_single_quote | format_no_declaration);
+	// and get the string
+	std::string result = os.str();
+	return result;
 }
 
 void lsl::command_sender::command_thread() {

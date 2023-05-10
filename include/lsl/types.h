@@ -47,6 +47,7 @@ typedef struct lsl_inlet_struct_ *lsl_inlet;
  * @sa [pugixml documentation](https://pugixml.org/docs/manual.html#access).
  */
 typedef struct lsl_xml_ptr_struct_ *lsl_xml_ptr;
+typedef struct lsl_xml_attribute_struct_ *lsl_xml_attribute_ptr;
 
 /**
  * @class lsl_continuous_resolver
