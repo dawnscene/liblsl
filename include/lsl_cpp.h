@@ -330,7 +330,12 @@ public:
 	std::string hostname() const { return lsl_get_hostname(obj.get()); }
 
 	/**
-	 * Flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+	 * Get flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+	 */
+	bool allow_remote_populate() const { return lsl_get_allow_remote_populate(obj.get()); }
+
+	/**
+	 * Set flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
 	 */
 	void allow_remote_populate (bool allow) { lsl_set_allow_remote_populate(obj.get(), allow); }
 

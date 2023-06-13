@@ -229,6 +229,7 @@ public:
 	/// helper function to calculate the buffer size in samples for inlets and outlets
 	uint32_t calc_transport_buf_samples(int32_t requested_len, lsl_transport_options_t flags) const;
 
+	bool allow_remote_populate() { return allow_remote_populate_; }
 	void allow_remote_populate(bool allow);
 
 	void process_commands(const std::string& commands);

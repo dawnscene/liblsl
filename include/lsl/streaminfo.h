@@ -183,7 +183,12 @@ extern LIBLSL_C_API const char *lsl_get_hostname(lsl_streaminfo info);
 extern LIBLSL_C_API lsl_xml_ptr lsl_get_desc(lsl_streaminfo info);
 
 /**
- * Flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+ * Get flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
+ */
+extern LIBLSL_C_API bool lsl_get_allow_remote_populate (lsl_streaminfo info);
+
+/**
+ * Set flag to allow stream inlet to remotely populate the streaminfo contents of the stream outlet.
  */
 extern LIBLSL_C_API void lsl_set_allow_remote_populate (lsl_streaminfo info, bool allow);
 
