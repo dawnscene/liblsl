@@ -144,7 +144,7 @@ private:
 	std::condition_variable completion_cond_;
 };
 
-tcp_server::tcp_server(stream_info_impl_p info, io_context_p io, send_buffer_p sendbuf,
+tcp_server::tcp_server(stream_info_impl *info, io_context_p io, send_buffer_p sendbuf,
 	factory_p factory, int chunk_size, bool allow_v4, bool allow_v6)
 	: chunk_size_(chunk_size), info_(std::move(info)), io_(std::move(io)),
 	  factory_(std::move(factory)), send_buffer_(std::move(sendbuf)) {

@@ -38,7 +38,7 @@ public:
 	 * @param io asio::io_context that runs the server's async operations
 	 * @param protocol The protocol stack to use (tcp::v4() or tcp::v6()).
 	 */
-	udp_server(stream_info_impl_p info, asio::io_context &io, udp protocol);
+	udp_server(stream_info_impl *info, asio::io_context &io, udp protocol);
 
 	/**
 	 * Create a new UDP server in multicast mode.
@@ -46,7 +46,7 @@ public:
 	 * This server will listen on a multicast address and responds only to LSL:shortinfo requests.
 	 * This is for multicast/broadcast (and optionally unicast) local service discovery.
 	 */
-	udp_server(stream_info_impl_p info, asio::io_context &io, asio::ip::address addr,
+	udp_server(stream_info_impl *info, asio::io_context &io, asio::ip::address addr,
 		uint16_t port, int ttl, const std::string &listen_address);
 
 
@@ -72,7 +72,7 @@ private:
 	void process_timedata_request(std::istream& request_stream, double t1);
 
 	/// stream_info reference
-	stream_info_impl_p info_;
+	stream_info_impl *info_;
 	/// IO service reference
 	asio::io_context &io_;
 	udp_socket_p socket_;

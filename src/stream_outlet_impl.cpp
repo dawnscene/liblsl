@@ -21,7 +21,7 @@ stream_outlet_impl::stream_outlet_impl(stream_info_impl &info, int32_t chunk_siz
 				  : api_config::get_instance()->outlet_buffer_reserve_samples()))),
 	  chunk_size_(info.calc_transport_buf_samples(requested_bufsize, flags)),
 //	  info_(std::make_shared<stream_info_impl>(info)),
-	  info_(std::shared_ptr<stream_info_impl>(&info)),
+	  info_(&info),
 	  send_buffer_(std::make_shared<send_buffer>(chunk_size_)),
 	  io_ctx_data_(std::make_shared<asio::io_context>(1)),
 	  io_ctx_service_(std::make_shared<asio::io_context>(1)) {

@@ -316,7 +316,7 @@ private:
 	/// the preferred chunk size
 	int32_t chunk_size_;
 	/// stream_info shared between the various server instances
-	stream_info_impl_p info_;
+	stream_info_impl *info_;
 	/// the single-producer, multiple-receiver send buffer
 	send_buffer_p send_buffer_;
 	/// the IO service objects

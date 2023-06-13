@@ -48,7 +48,7 @@ public:
 	 * @param chunk_size The preferred chunk size, in samples. If 0, the pushthrough flag determines
 	 * the effective chunking.
 	 */
-	tcp_server(stream_info_impl_p info, io_context_p io, send_buffer_p sendbuf, factory_p factory,
+	tcp_server(stream_info_impl *info, io_context_p io, send_buffer_p sendbuf, factory_p factory,
 		int chunk_size, bool allow_v4, bool allow_v6);
 
 	/**
@@ -86,7 +86,7 @@ private:
 	int chunk_size_; // the chunk size to use (or 0)
 
 	// data shared with the outlet
-	stream_info_impl_p info_; // shared stream_info object
+	stream_info_impl *info_; // shared stream_info object
 	io_context_p io_;	// shared ptr to IO service; ensures that the IO is still around by the time
 						// the acceptor needs to be destroyed
 	factory_p factory_; // reference to the sample factory (which owns the samples)
