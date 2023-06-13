@@ -113,8 +113,8 @@ void udp_server::end_serving() {
 void udp_server::request_next_packet() {
 	DLOG_F(5, "udp_server::request_next_packet");
 	socket_->async_receive_from(asio::buffer(buffer_), remote_endpoint_,
-		[shared_this = shared_from_this()](
-			err_t err, std::size_t len) { shared_this->handle_receive_outcome(err, len); });
+		[weak_this = weak_from_this()](
+			err_t err, std::size_t len) { weak_this.lock()->handle_receive_outcome(err, len); });
 }
 
 void udp_server::process_shortinfo_request(std::istream& request_stream)
@@ -137,9 +137,9 @@ void udp_server::process_shortinfo_request(std::istream& request_stream)
 		string_p replymsg(
 			std::make_shared<std::string>((query_id += "\r\n") += info_->to_shortinfo_message()));
 		socket_->async_send_to(asio::buffer(*replymsg), return_endpoint,
-			[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
+			[weak_this = weak_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
 				if (err_ != asio::error::operation_aborted && err_ != asio::error::shut_down)
-					shared_this->request_next_packet();
+					weak_this.lock()->request_next_packet();
 			});
 	} else {
 		DLOG_F(2, "%p query didn't match", (void *)this);
@@ -159,9 +159,9 @@ void udp_server::process_timedata_request(std::istream &request_stream, double t
 	reply << ' ' << wave_id << ' ' << t0 << ' ' << t1 << ' ' << lsl_clock();
 	string_p replymsg(std::make_shared<std::string>(reply.str()));
 	socket_->async_send_to(asio::buffer(*replymsg), remote_endpoint_,
-		[shared_this = shared_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
+		[weak_this = weak_from_this(), replymsg](err_t err_, std::size_t /*unused*/) {
 			if (err_ != asio::error::operation_aborted && err_ != asio::error::shut_down)
-				shared_this->request_next_packet();
+				weak_this.lock()->request_next_packet();
 		});
 }
 

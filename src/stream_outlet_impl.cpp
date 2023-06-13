@@ -108,8 +108,8 @@ stream_outlet_impl::~stream_outlet_impl() {
 		// 4. waiting a bit and
 		// 5. detaching thread, i.e. letting it hang and continue tearing down
 		//    the outlet
-		asio::post(*io_ctx_data_, [io = io_ctx_data_]() { io->stop(); });
-		asio::post(*io_ctx_service_, [io = io_ctx_service_]() { io->stop(); });
+		asio::post(*io_ctx_data_, [io = io_ctx_data_.get()]() { io->stop(); });
+		asio::post(*io_ctx_service_, [io = io_ctx_service_.get()]() { io->stop(); });
 		const char *name = this->info().name().c_str();
 		for (int try_nr = 0; try_nr <= 100; ++try_nr) {
 			switch (try_nr) {

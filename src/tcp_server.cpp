@@ -212,18 +212,18 @@ void tcp_server::accept_next_connection(tcp_acceptor_p &acceptor) {
 		auto &sock_io_ctx = *io_;
 
 		// accept a connection on the session's socket
-		acceptor->async_accept(sock_io_ctx, [shared_this = shared_from_this(), &acceptor](
+		acceptor->async_accept(sock_io_ctx, [weak_this = weak_from_this(), &acceptor](
 												err_t err, tcp_socket sock) {
 			if (err == asio::error::operation_aborted || err == asio::error::shut_down) return;
 
 			// no error: create a new session and start processing
 			if (!err)
-				std::make_shared<client_session>(shared_this, std::move(sock))->begin_processing();
+				std::make_shared<client_session>(weak_this.lock(), std::move(sock))->begin_processing();
 			else
 				LOG_F(WARNING, "Unhandled accept error: %s", err.message().c_str());
 
 			// and move on to the next connection
-			shared_this->accept_next_connection(acceptor);
+			weak_this.lock()->accept_next_connection(acceptor);
 		});
 	} catch (std::exception &e) {
 		LOG_F(ERROR, "Error during tcp_server::accept_next_connection: %s", e.what());
