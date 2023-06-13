@@ -200,7 +200,9 @@ void tcp_server::end_serving() {
 	close_inflight_sessions();
 	// also notify any transfer threads that are blocked waiting for a sample by sending them one (=
 	// a ping)
-	send_buffer_->push_sample(factory_->new_sample(lsl_clock(), true));
+	// set timestamp to -1.0 to indicate end of the transfer
+//	send_buffer_->push_sample(factory_->new_sample(lsl_clock(), true));
+	send_buffer_->push_sample(factory_->new_sample(-1.0, true));
 }
 
 // === accept loop ===
@@ -587,6 +589,9 @@ void client_session::transfer_samples_thread(std::shared_ptr<client_session> /* 
 			// ignore blank samples (they are basically wakeup notifiers from someone's
 			// end_serving())
 			if (!samp) continue;
+			// timestamp = -1.0 indicate end_serving()
+			if (samp->timestamp() < 0) break;
+
 			// serialize the sample into the stream
 			if (data_protocol_version_ >= 110)
 				samp->save_streambuf(
