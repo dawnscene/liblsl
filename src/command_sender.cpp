@@ -69,8 +69,7 @@ std::string lsl::command_sender::make_command(const std::string &command, const 
 	std::ostringstream os;
 	doc.print(os, "\t", pugi::format_no_escapes | format_raw | format_attribute_single_quote | format_no_declaration);
 	// and get the string
-	std::string result = os.str();
-	return result;
+	return std::move(os.str());
 }
 
 void lsl::command_sender::command_thread() {

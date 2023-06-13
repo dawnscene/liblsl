@@ -998,7 +998,7 @@ public:
 		const char *p = lsl_make_command(obj.get(), command.c_str(), xpath.c_str(), 
 			name.c_str(), value.c_str(), text.c_str(), &ec);
 		std::string cmd_str = p;
-		delete p;
+		if (p) delete p;
 		check_error(ec);
 		return cmd_str;
 	}

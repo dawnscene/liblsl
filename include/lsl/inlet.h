@@ -91,6 +91,7 @@ extern LIBLSL_C_API lsl_streaminfo lsl_send_commands(lsl_inlet in, const char *c
 
 /**
  * Helper function to make a command to be send through lsl_send_commands
+ * NOTE: It is the responsibility of the caller to delete the returned pointer.
  */
 extern LIBLSL_C_API const char *lsl_make_command(lsl_inlet in, const char *command, const char *xpath,
 	const char *name, const char *value, const char *text, int32_t *ec);
