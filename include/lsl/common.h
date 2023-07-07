@@ -227,3 +227,5 @@ extern LIBLSL_C_API double lsl_local_clock();
  * no free() method is available (e.g., in some scripting languages).
  */
 extern LIBLSL_C_API void lsl_destroy_string(char *s);
+
+extern LIBLSL_C_API void lsl_add_log_callback(const char* id, void (*callback)(), void* user_data, int verbosity);

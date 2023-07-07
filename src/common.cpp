@@ -45,6 +45,12 @@ LIBLSL_C_API const char *lsl_last_error(void) {
 	thread_local char last_error[LAST_ERROR_SIZE] = {0};
 	return last_error;
 }
+
+LIBLSL_C_API void lsl_add_log_callback(const char* id, void (*callback)(), void* user_data, int verbosity) {
+	loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
+	loguru::add_callback(id, (loguru::log_handler_t)callback, user_data, (loguru::Verbosity)verbosity);
+}
+
 }
 
 // === implementation of misc functions ===

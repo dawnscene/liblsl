@@ -134,6 +134,7 @@ inline const char *library_info() { return lsl_library_info(); }
  */
 inline double local_clock() { return lsl_local_clock(); }
 
+inline void add_log_callback(const char* id, void (*callback)(), void* user_data, int verbosity) { return lsl_add_log_callback(id, callback, user_data, verbosity); }
 
 /// @section Stream Declaration
 
