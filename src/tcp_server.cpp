@@ -268,7 +268,7 @@ void tcp_server::close_inflight_sessions() {
 // === implementation of the client_session class ===
 
 client_session::~client_session() {
-	LOG_F(1, "Destructing session %p", this);
+	LOG_F(3, "Destructing session %p", this);
 	delete[] scratch_;
 	if (auto serv = serv_.lock()) serv->unregister_inflight_session(this);
 }
