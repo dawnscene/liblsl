@@ -144,7 +144,7 @@ void resolver_impl::resolve_continuous(const std::string &query, double forget_a
 	// start a wave of resolve packets
 	next_resolve_wave();
 	// spawn a thread that runs the IO operations
-	background_io_ = std::make_shared<std::thread>([shared_io = io_]() { shared_io->run(); });
+	background_io_ = std::make_shared<std::thread>([shared_io = io_]() { loguru::set_thread_name("R_"); shared_io->run(); });
 	status = resolver_status::running_continuous;
 }
 

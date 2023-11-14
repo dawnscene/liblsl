@@ -74,7 +74,7 @@ std::string lsl::command_sender::make_command(const std::string &command, const 
 
 void lsl::command_sender::command_thread() {
 	conn_.acquire_watchdog();
-	loguru::set_thread_name((std::string("C_") += conn_.type_info().name().substr(0, 12)).c_str());
+	loguru::set_thread_name(("C_" + conn_.type_info().name().substr(0, 10) + "_" + conn_.type_info().type().substr(0, 3)).c_str());
 	try {
 		while (!conn_.lost() && !conn_.shutdown()) {
 			try {

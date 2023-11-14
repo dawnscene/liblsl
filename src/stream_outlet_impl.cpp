@@ -54,7 +54,7 @@ stream_outlet_impl::stream_outlet_impl(stream_info_impl &info, int32_t chunk_siz
 	for (auto &responder : responders_) responder->begin_serving();
 
 	// and start the IO threads to handle them
-	const std::string name{"IO_" + this->info().name().substr(0, 11)};
+	const std::string name{"O_" + this->info().name().substr(0, 10) + "_" + this->info().type().substr(0, 3)};
 	for (const auto &io : {io_ctx_data_, io_ctx_service_})
 		io_threads_.emplace_back(std::make_shared<std::thread>([io, name]() {
 			loguru::set_thread_name(name.c_str());

@@ -47,7 +47,7 @@ const lsl::stream_info_impl &lsl::info_receiver::info(double timeout) {
 
 void lsl::info_receiver::info_thread() {
 	conn_.acquire_watchdog();
-	loguru::set_thread_name((std::string("I_") += conn_.type_info().name().substr(0, 12)).c_str());
+	loguru::set_thread_name(("I_" + conn_.type_info().name().substr(0, 10) + "_" + conn_.type_info().type().substr(0, 3)).c_str());
 	try {
 		while (!conn_.lost() && !conn_.shutdown()) {
 			try {

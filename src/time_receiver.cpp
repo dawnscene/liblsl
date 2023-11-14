@@ -80,7 +80,7 @@ bool time_receiver::was_reset() {
 
 void time_receiver::time_thread() {
 	conn_.acquire_watchdog();
-	loguru::set_thread_name((std::string("T_") += conn_.type_info().name()).c_str());
+	loguru::set_thread_name(("T_" + conn_.type_info().name().substr(0, 10) + "_" + conn_.type_info().type().substr(0, 3)).c_str());
 	DLOG_F(2, "Started time receiver thread");
 	try {
 		// start an async time estimation
