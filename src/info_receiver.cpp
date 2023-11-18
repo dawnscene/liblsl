@@ -50,6 +50,9 @@ void lsl::info_receiver::info_thread() {
 	try {
 		while (!conn_.lost() && !conn_.shutdown()) {
 			try {
+				std::unique_lock<std::mutex> command_lock(commands_mut_);
+				bool has_command = !commands_.empty();
+				command_lock.unlock();
 				// make a new stream buffer & stream
 				cancellable_streambuf buffer;
 				buffer.register_at(&conn_);
@@ -58,12 +61,12 @@ void lsl::info_receiver::info_thread() {
 				if (buffer.connect(conn_.get_tcp_endpoint()) == nullptr) {
 					break;
 				}
-				if (commands_.empty()) {
-					// send the query
-					server_stream << "LSL:fullinfo\r\n" << std::flush;
-				} else {
+				if (has_command) {
 					// send the command
 					server_stream << "LSL:command\r\n" << commands_ << "\r\n" << std::flush;
+				} else {
+					// send the query
+					server_stream << "LSL:fullinfo\r\n" << std::flush;
 				}
 				// receive and parse the response
 				std::ostringstream os;
@@ -79,13 +82,13 @@ void lsl::info_receiver::info_thread() {
 					std::lock_guard<std::mutex> lock(fullinfo_mut_);
 					fullinfo_ = std::make_shared<stream_info_impl>(info);
 				}
-				std::unique_lock<std::mutex> lock(commands_mut_);
-				if (!commands_.empty()) {
+				if (has_command) {
 					commands_.clear();
 				}
 				fullinfo_upd_.notify_all();
 				conn_.update_receive_time(lsl_clock());
-				commands_upd_.wait_for(lock, std::chrono::milliseconds(100), [&] { return !commands_.empty(); });
+				command_lock.lock();
+				commands_upd_.wait_for(command_lock, std::chrono::milliseconds(100), [&] { return !commands_.empty(); });
 				continue;
 			} catch (err_t) {
 				// connection-level error: closed, reset, refused, etc.
