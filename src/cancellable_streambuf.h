@@ -37,9 +37,9 @@ public:
 
 	/// Destructor flushes buffered data.
 	~cancellable_streambuf() override {
+		if (pptr() != pbase()) overflow(traits_type::eof());
 		// no cancel() can fire after this call
 		unregister_from_all();
-		if (pptr() != pbase()) overflow(traits_type::eof());
 	}
 
 	/**

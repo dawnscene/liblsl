@@ -87,6 +87,11 @@ void inlet_connection::disengage() {
 		shutdown_ = true;
 	}
 	shutdown_cond_.notify_all();
+	{
+		std::unique_lock<std::mutex> lock(client_status_mut_);
+		active_transmissions_upd_.wait_for(lock, std::chrono::duration<double>(1),
+			[this]() { return active_transmissions_ == 0; });
+	}
 	// cancel all operations (resolver, streams, ...)
 	resolver_.cancel();
 	cancel_and_shutdown();
@@ -176,16 +181,19 @@ void inlet_connection::try_recover() {
 			for (int attempt = 0;; attempt++) {
 				// issue the resolve (blocks until it is either cancelled or got at least one
 				// matching streaminfo and has waited for a certain timeout)
+				LOG_F(ERROR, "Re-connecting attempt %d", attempt);
 				std::vector<stream_info_impl> infos =
-					resolver_.resolve_oneshot(query.str(), 1, FOREVER, attempt == 0 ? 1.0 : 5.0);
+					resolver_.resolve_oneshot(query.str(), 1, 10, attempt == 0 ? 1.0 : 5.0);
 				if (!infos.empty()) {
 					// got a result
 					unique_lock_t lock_recover_host_info(host_info_mut_);
 					// check if any of the returned streams is the one that we're currently
 					// connected to
 					for (auto &info : infos)
-						if (info.uid() == host_info_.uid())
+						if (info.uid() == host_info_.uid()) {
+							LOG_F(INFO, "Connection is still alive");
 							return; // in this case there is no need to recover (we're still fine)
+						}
 					// otherwise our stream is gone and we indeed need to recover:
 					// ensure that the query result is unique (since someone might have used a
 					// non-unique stream ID)
@@ -203,6 +211,7 @@ void inlet_connection::try_recover() {
 						// unlock recover mutex because onrecover callbacks may acquire the lock themselves
 						lock_recover_host_info.unlock();
 						for (auto &pair : onrecover_) (pair.second)();
+						LOG_F(INFO, "Connection recovered");
 					} else {
 						// there are multiple possible streams to connect to in a recovery attempt:
 						// we warn and re-try this is because we don't want to randomly connect to
@@ -220,7 +229,7 @@ void inlet_connection::try_recover() {
 				} else {
 					// cancelled
 				}
-				break;
+				continue;
 			}
 		} catch (std::exception &e) {
 			LOG_F(ERROR, "A recovery attempt encountered an unexpected error: %s", e.what());
@@ -257,6 +266,7 @@ void inlet_connection::watchdog_thread() {
 					(lsl_clock() - last_receive_time_ >
 						api_config::get_instance()->watchdog_time_threshold())) {
 					lock.unlock();
+					LOG_F(ERROR, "Connection lost, re-connecting...");
 					try_recover();
 				}
 			}
@@ -307,6 +317,7 @@ void inlet_connection::acquire_watchdog() {
 void inlet_connection::release_watchdog() {
 	std::lock_guard<std::mutex> lock(client_status_mut_);
 	active_transmissions_--;
+	active_transmissions_upd_.notify_all();
 }
 
 void inlet_connection::update_receive_time(double t) {

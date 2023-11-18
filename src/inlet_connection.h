@@ -206,6 +206,8 @@ private:
 	std::mutex client_status_mut_;
 	/// protects the onrecover callback map
 	std::mutex onrecover_mut_;
+	/// when number of active_transmissions_ is updated
+	std::condition_variable active_transmissions_upd_;
 };
 } // namespace lsl
 

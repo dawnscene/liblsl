@@ -77,9 +77,9 @@ void data_receiver::open_stream(double timeout) {
 void data_receiver::close_stream() {
 	check_thread_start_ = true;
 	closing_stream_ = true;
+	cancel_all_registered();
 	if (data_thread_.joinable())
 		data_thread_.join();
-	cancel_all_registered();
 }
 
 sample_p lsl::data_receiver::try_get_next_sample(double timeout)
