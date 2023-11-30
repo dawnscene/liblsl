@@ -52,7 +52,6 @@ void lsl::info_receiver::info_thread() {
 			try {
 				std::unique_lock<std::mutex> command_lock(commands_mut_);
 				bool has_command = !commands_.empty();
-				command_lock.unlock();
 				// make a new stream buffer & stream
 				cancellable_streambuf buffer;
 				buffer.register_at(&conn_);
@@ -87,7 +86,6 @@ void lsl::info_receiver::info_thread() {
 				}
 				fullinfo_upd_.notify_all();
 				conn_.update_receive_time(lsl_clock());
-				command_lock.lock();
 				commands_upd_.wait_for(command_lock, std::chrono::milliseconds(100), [&] { return !commands_.empty(); });
 				continue;
 			} catch (err_t) {

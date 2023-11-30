@@ -181,7 +181,6 @@ void inlet_connection::try_recover() {
 			for (int attempt = 0;; attempt++) {
 				// issue the resolve (blocks until it is either cancelled or got at least one
 				// matching streaminfo and has waited for a certain timeout)
-				LOG_F(ERROR, "Re-connecting attempt %d", attempt);
 				std::vector<stream_info_impl> infos =
 					resolver_.resolve_oneshot(query.str(), 1, 10, attempt == 0 ? 1.0 : 5.0);
 				if (!infos.empty()) {

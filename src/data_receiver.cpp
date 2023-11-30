@@ -77,6 +77,7 @@ void data_receiver::open_stream(double timeout) {
 void data_receiver::close_stream() {
 	check_thread_start_ = true;
 	closing_stream_ = true;
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	cancel_all_registered();
 	if (data_thread_.joinable())
 		data_thread_.join();
