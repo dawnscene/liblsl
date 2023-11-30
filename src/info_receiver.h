@@ -1,6 +1,7 @@
 #ifndef INFO_RECEIVER_H
 #define INFO_RECEIVER_H
 
+#include "cancellation.h"
 #include "common.h"
 #include "forward.h"
 #include <condition_variable>
@@ -20,7 +21,7 @@ class stream_info_impl;
  * The background thread terminates only if the info_receiver is destroyed or the underlying
  * connection is lost or shut down.
  */
-class info_receiver {
+class info_receiver final : public cancellable_registry {
 public:
 	/// Construct a new info receiver for a given connection.
 	info_receiver(inlet_connection &conn);
@@ -36,6 +37,19 @@ public:
 	 * lost).
 	 */
 	const stream_info_impl &info(double timeout = FOREVER);
+
+	/**
+	 * Send commands to remote stream outlet
+	 * (stream_info::info() field).
+	 * @param commands XML-based commands, multiple commands may be included in one string.
+	 * @param timeout Timeout of the operation (default: no timeout).
+	 * @throws timeout_error (if the timeout expires), or lost_error (if the stream source has been
+	 * lost).
+	 */
+	const stream_info_impl &send_commands(std::string commands, double timeout = FOREVER);
+
+	std::string make_command(const std::string &command, const std::string &xpath, 
+    	const std::string &name, const std::string &value, const std::string &text);
 
 private:
 	/// The info reader thread.
@@ -53,6 +67,13 @@ private:
 	std::mutex fullinfo_mut_;
 	/// condition variable to indicate that an update for the fullinfo is available
 	std::condition_variable fullinfo_upd_;
+
+	/// commands to be sent to the outlet
+	std::string commands_;
+	/// conditional variable to indicate that a new command need to be sent
+	std::condition_variable commands_upd_;
+	/// mutex to protect the commands
+	std::mutex commands_mut_;
 };
 
 } // namespace lsl

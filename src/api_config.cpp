@@ -110,7 +110,7 @@ void api_config::load_from_file(const std::string &filename) {
 		base_port_ = pt.get("ports.BasePort", 16572);
 		port_range_ = pt.get("ports.PortRange", 32);
 		allow_random_ports_ = pt.get("ports.AllowRandomPorts", true);
-		std::string ipv6_str = pt.get("ports.IPv6", "allow");
+		std::string ipv6_str = pt.get("ports.IPv6", "disabled");
 
 		allow_ipv4_ = true;
 		allow_ipv6_ = true;

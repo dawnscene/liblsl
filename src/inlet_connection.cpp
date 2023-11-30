@@ -14,6 +14,7 @@
 
 using namespace lsl;
 namespace ip = asio::ip;
+
 inlet_connection::inlet_connection(const stream_info_impl &info, bool recover)
 	: type_info_(info), host_info_(info), tcp_protocol_(tcp::v4()), udp_protocol_(udp::v4()),
 	  recovery_enabled_(recover), lost_(false), shutdown_(false), last_receive_time_(lsl_clock()),
@@ -28,19 +29,7 @@ inlet_connection::inlet_connection(const stream_info_impl &info, bool recover)
 				") uses a newer protocol version than this inlet. Please update.");
 
 		// select TCP/UDP protocol versions
-		if (api_config::get_instance()->allow_ipv6()) {
-			// if IPv6 is optionally allowed...
-			if (host_info_.v4address().empty() || !host_info_.v4data_port() ||
-				!host_info_.v4service_port()) {
-				// then use it but only iff there are problems with the IPv4 connection data
-				tcp_protocol_ = tcp::v6();
-				udp_protocol_ = udp::v6();
-			} else {
-				// (otherwise stick to IPv4)
-				tcp_protocol_ = tcp::v4();
-				udp_protocol_ = udp::v4();
-			}
-		} else {
+		if (!set_protocols(info, false)) {
 			// otherwise use the protocol type that is selected in the config
 			tcp_protocol_ = api_config::get_instance()->allow_ipv4() ? tcp::v4() : tcp::v6();
 			udp_protocol_ = api_config::get_instance()->allow_ipv4() ? udp::v4() : udp::v6();
@@ -54,7 +43,6 @@ inlet_connection::inlet_connection(const stream_info_impl &info, bool recover)
 				host_info_.name().c_str());
 			recovery_enabled_ = false;
 		}
-
 	} else {
 		// the actual endpoint is not known yet -- we need to discover it later on the fly
 		// check that all the necessary information for this has been fully specified
@@ -99,6 +87,11 @@ void inlet_connection::disengage() {
 		shutdown_ = true;
 	}
 	shutdown_cond_.notify_all();
+	{
+		std::unique_lock<std::mutex> lock(client_status_mut_);
+		active_transmissions_upd_.wait_for(lock, std::chrono::duration<double>(1),
+			[this]() { return active_transmissions_ == 0; });
+	}
 	// cancel all operations (resolver, streams, ...)
 	resolver_.cancel();
 	cancel_and_shutdown();
@@ -189,26 +182,35 @@ void inlet_connection::try_recover() {
 				// issue the resolve (blocks until it is either cancelled or got at least one
 				// matching streaminfo and has waited for a certain timeout)
 				std::vector<stream_info_impl> infos =
-					resolver_.resolve_oneshot(query.str(), 1, FOREVER, attempt == 0 ? 1.0 : 5.0);
+					resolver_.resolve_oneshot(query.str(), 1, 10, attempt == 0 ? 1.0 : 5.0);
 				if (!infos.empty()) {
 					// got a result
-					unique_lock_t lock(host_info_mut_);
+					unique_lock_t lock_recover_host_info(host_info_mut_);
 					// check if any of the returned streams is the one that we're currently
 					// connected to
 					for (auto &info : infos)
-						if (info.uid() == host_info_.uid())
+						if (info.uid() == host_info_.uid()) {
+							LOG_F(INFO, "Connection is still alive");
 							return; // in this case there is no need to recover (we're still fine)
+						}
 					// otherwise our stream is gone and we indeed need to recover:
 					// ensure that the query result is unique (since someone might have used a
 					// non-unique stream ID)
 					if (infos.size() == 1) {
+						// update the protocols from the stream info,
+						// preferring IPv6 if previously used as well
+						if (!set_protocols(infos[0], tcp_protocol_ == tcp::v6()))
+							throw std::logic_error("No suitable protocol found in discovery");
 						// update the endpoint
 						host_info_ = infos[0];
 						// cancel all cancellable operations registered with this connection
 						cancel_all_registered();
 						// invoke any callbacks associated with a connection recovery
-						std::lock_guard<std::mutex> lock(onrecover_mut_);
+						std::lock_guard<std::mutex> lock_onrecover_mut(onrecover_mut_);
+						// unlock recover mutex because onrecover callbacks may acquire the lock themselves
+						lock_recover_host_info.unlock();
 						for (auto &pair : onrecover_) (pair.second)();
+						LOG_F(INFO, "Connection recovered");
 					} else {
 						// there are multiple possible streams to connect to in a recovery attempt:
 						// we warn and re-try this is because we don't want to randomly connect to
@@ -226,7 +228,7 @@ void inlet_connection::try_recover() {
 				} else {
 					// cancelled
 				}
-				break;
+				continue;
 			}
 		} catch (std::exception &e) {
 			LOG_F(ERROR, "A recovery attempt encountered an unexpected error: %s", e.what());
@@ -234,8 +236,25 @@ void inlet_connection::try_recover() {
 	}
 }
 
+bool inlet_connection::set_protocols(const stream_info_impl &info, bool prefer_v6) {
+	bool has_v4 = !info.v4address().empty() && info.v4data_port() && info.v4service_port();
+	bool has_v6 = !info.v6address().empty() && info.v6data_port() && info.v6service_port();
+	bool can_v4 = api_config::get_instance()->allow_ipv4() && has_v4;
+	bool can_v6 = api_config::get_instance()->allow_ipv6() && has_v6;
+	if ((prefer_v6 && can_v6) || !can_v4) {
+		tcp_protocol_ = tcp::v6();
+		udp_protocol_ = udp::v6();
+		return true;
+	} else if (can_v4) {
+		tcp_protocol_ = tcp::v4();
+		udp_protocol_ = udp::v4();
+		return true;
+	}
+	return false;
+}
+
 void inlet_connection::watchdog_thread() {
-	loguru::set_thread_name((std::string("W_") += type_info().name().substr(0, 12)).c_str());
+	loguru::set_thread_name(("W_" + this->type_info().name().substr(0, 10) + "_" + this->type_info().type().substr(0, 3)).c_str());
 	while (!lost_ && !shutdown_) {
 		try {
 			// we only try to recover if a) there are active transmissions and b) we haven't seen
@@ -246,6 +265,7 @@ void inlet_connection::watchdog_thread() {
 					(lsl_clock() - last_receive_time_ >
 						api_config::get_instance()->watchdog_time_threshold())) {
 					lock.unlock();
+					LOG_F(ERROR, "Connection lost, re-connecting...");
 					try_recover();
 				}
 			}
@@ -296,6 +316,7 @@ void inlet_connection::acquire_watchdog() {
 void inlet_connection::release_watchdog() {
 	std::lock_guard<std::mutex> lock(client_status_mut_);
 	active_transmissions_--;
+	active_transmissions_upd_.notify_all();
 }
 
 void inlet_connection::update_receive_time(double t) {

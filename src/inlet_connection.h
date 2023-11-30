@@ -156,6 +156,9 @@ private:
 	/// A (potentially speculative) resolve-and-recover operation.
 	void try_recover();
 
+	/// Sets the endpoints from a stream info considering a previous connection
+	bool set_protocols(const stream_info_impl &info, bool prefer_v6);
+
 	// core connection properties
 	/// static/read-only information of the stream (type & format)
 	const stream_info_impl type_info_;
@@ -203,6 +206,8 @@ private:
 	std::mutex client_status_mut_;
 	/// protects the onrecover callback map
 	std::mutex onrecover_mut_;
+	/// when number of active_transmissions_ is updated
+	std::condition_variable active_transmissions_upd_;
 };
 } // namespace lsl
 

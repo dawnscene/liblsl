@@ -77,9 +77,10 @@ void data_receiver::open_stream(double timeout) {
 void data_receiver::close_stream() {
 	check_thread_start_ = true;
 	closing_stream_ = true;
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	cancel_all_registered();
 	if (data_thread_.joinable())
 		data_thread_.join();
-	cancel_all_registered();
 }
 
 sample_p lsl::data_receiver::try_get_next_sample(double timeout)
@@ -138,7 +139,7 @@ double data_receiver::pull_sample_untyped(void *buffer, int buffer_bytes, double
 
 void data_receiver::data_thread() {
 	conn_.acquire_watchdog();
-	loguru::set_thread_name((std::string("R_") += conn_.type_info().name().substr(0, 12)).c_str());
+	loguru::set_thread_name(("D_" + conn_.type_info().name().substr(0, 10) + "_" + conn_.type_info().type().substr(0, 3)).c_str());
 	// ensure that the sample factory persists for the lifetime of this thread
 	factory_p factory(sample_factory_);
 	try {

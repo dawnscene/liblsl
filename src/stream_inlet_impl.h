@@ -2,7 +2,6 @@
 #define STREAM_INLET_IMPL_H
 
 #include "common.h"
-#include "command_sender.h"
 #include "data_receiver.h"
 #include "info_receiver.h"
 #include "inlet_connection.h"
@@ -41,7 +40,7 @@ public:
 	stream_inlet_impl(const stream_info_impl &info, int32_t max_buflen = 360,
 		int32_t max_chunklen = 0, bool recover = true)
 		: conn_(info, recover), info_receiver_(conn_), time_receiver_(conn_),
-		  data_receiver_(conn_, max_buflen, max_chunklen), command_sender_(conn_), 
+		  data_receiver_(conn_, max_buflen, max_chunklen), 
 		  postprocessor_([this]() { return time_receiver_.time_correction(5); },
 			  [this]() { return conn_.current_srate(); },
 			  [this]() { return time_receiver_.was_reset(); }) {
@@ -265,11 +264,11 @@ public:
      *	"<remove_child xpath='//desc' name='my_child2' />"
      *	"<set_name xpath='//config_1' name='config_2' />"
 	 */
-	const stream_info_impl &send_commands (std::string commands, double timeout = FOREVER) { return command_sender_.send_commands(commands, timeout); }
+	const stream_info_impl &send_commands (std::string commands, double timeout = FOREVER) { return info_receiver_.send_commands(commands, timeout); }
 
 	const std::string make_command (const std::string &command, const std::string &xpath, 
     	const std::string &name, const std::string &value, const std::string &text) {
-		return std::move(command_sender_.make_command(command, xpath, name, value, text));
+		return std::move(info_receiver_.make_command(command, xpath, name, value, text));
 	}
 
 	/**
@@ -364,7 +363,6 @@ private:
 	info_receiver info_receiver_;
 	time_receiver time_receiver_;
 	data_receiver data_receiver_;
-	command_sender command_sender_;
 
 	/// class for post-processing time stamps
 	time_postprocessor postprocessor_;
