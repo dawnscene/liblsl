@@ -28,7 +28,6 @@ const lsl::stream_info_impl &lsl::info_receiver::info(double timeout) {
 	std::unique_lock<std::mutex> lock(fullinfo_mut_);
 	auto info_ready = [this]() { return fullinfo_ || conn_.lost() || conn_.shutdown(); };
 	if (!info_ready()) {
-		fullinfo_ = 0;
 		// start thread if not yet running
 		if (!info_thread_.joinable()) info_thread_ = std::thread(&info_receiver::info_thread, this);
 		// wait until we are ready to return a result (or we time out)
@@ -86,7 +85,7 @@ void lsl::info_receiver::info_thread() {
 				}
 				fullinfo_upd_.notify_all();
 				conn_.update_receive_time(lsl_clock());
-				commands_upd_.wait_for(command_lock, std::chrono::milliseconds(100), [&] { return !commands_.empty(); });
+				commands_upd_.wait_for(command_lock, std::chrono::milliseconds(10), [&] { return !commands_.empty(); });
 				continue;
 			} catch (err_t) {
 				// connection-level error: closed, reset, refused, etc.
